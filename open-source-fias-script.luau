@@ -3091,14 +3091,16 @@ end,
 })
 
 local Divider3352 = ServerMiscTab:CreateDivider()
-
 local TeleportInfoParagraph
 local LocatePlayerInput
+local targetKey = nil
+local targetJobId = nil
+
 local TeleporToPlayer = ServerMiscTab:CreateButton({
     Name = "Get Player Server Info",
     Callback = function()
-        local targetJobId = nil
-        local targetKey
+        targetJobId = nil
+        targetKey = nil
         local targetServerName = "Unknown"
         local targetRegion = "Unknown"
         local targetPlayerCount = "0"
@@ -3122,13 +3124,13 @@ local TeleporToPlayer = ServerMiscTab:CreateButton({
 
         for _, v in pairs(data) do
             local key = v.key
-            local jobID = v.value.Place_ID
+            local jobID = v.value.PlaceId
             local playerList = v.value.Player_ID_Array
 
             for _, userID in pairs(playerList) do
                 if targetUserId == userID then
                     targetJobId = jobID
-                    targetKey = key
+                    targetKey = key 
                     targetServerName = v.value.Name or "Unknown"
                     targetPlayerCount = tostring(v.value.Player_Count or 0) .. "/" .. tostring(game.Players.MaxPlayers)
                     if v.value.Region then
@@ -3138,7 +3140,7 @@ local TeleporToPlayer = ServerMiscTab:CreateButton({
             end
         end
 
-        if targetJobId then
+        if targetKey then
             TeleportInfoParagraph:Set({
                 Title = "SERVER INFO:",
                 Content = 
@@ -3155,7 +3157,7 @@ local TeleporToPlayer = ServerMiscTab:CreateButton({
                 Content = "PLAYER IS NOT IN SERVERS ( RESETTING PARAGRAPH )"
             })
 
-            wait(3)
+            task.wait(3)
 
             TeleportInfoParagraph:Set({
                 Title = "SERVER INFO:",
@@ -3179,6 +3181,18 @@ LocatePlayerInput = ServerMiscTab:CreateInput({
 TeleportInfoParagraph = ServerMiscTab:CreateParagraph({
     Title = "SERVER INFO:", 
     Content = "None"
+})
+
+local copyjobid = ServerMiscTab:CreateButton({
+    Name = "Copy Job Id",
+    Callback = function()
+        if targetKey then
+            setclipboard(targetKey)
+            Rayfield:Notify({ Title = "SERVER INFO", Content = "Copied key to clipboard!", Duration = 2 })
+        else
+            Rayfield:Notify({ Title = "SERVER INFO", Content = "No key found to copy", Duration = 2 })
+        end
+    end,
 })
 
 getgenv().ServerHopDivider = ServerMiscTab:CreateDivider()

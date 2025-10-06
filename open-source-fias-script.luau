@@ -59,6 +59,7 @@ local KillFarm
 local AttackAura
 local AutoShove
 local OldAura 
+getgenv().DisableCameraShake = nil
 
 usernames = {
     "itseasttt",
@@ -202,7 +203,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     end
 end)
 
---[[local Config = {
+local Config = {
     Sensitivity = 0.3,
     MinPitch = -80,
     MaxPitch = 80,
@@ -216,24 +217,24 @@ Config.MaxPitch = math.rad(Config.MaxPitch)
 local yaw = 0
 local pitch = 0
 local isCameraMovementActive = false
+getgenv().lastCameraActive = false
 
 local function onInputChanged(input, gameProcessedEvent)
-    if not isCameraMovementActive or gameProcessedEvent then return end
-
+    if not getgenv().DisableCameraShake.CurrentValue or not isCameraMovementActive or gameProcessedEvent then
+        return
+    end
     if input.UserInputType == Enum.UserInputType.MouseMovement then
         local delta = input.Delta
-        
         yaw = yaw - delta.X * math.rad(Config.Sensitivity)
         pitch = pitch - delta.Y * math.rad(Config.Sensitivity)
-        
         pitch = math.clamp(pitch, Config.MinPitch, Config.MaxPitch)
     end
 end
 
 local function onInputBegan(input, gameProcessedEvent)
     if gameProcessedEvent then return end
-
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+    
+    if getgenv().DisableCameraShake.CurrentValue and input.UserInputType == Enum.UserInputType.MouseButton2 then
         isCameraMovementActive = true
         UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
     end
@@ -242,42 +243,41 @@ end
 local function onInputEnded(input, gameProcessedEvent)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then
         isCameraMovementActive = false
-        UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+        if getgenv().DisableCameraShake.CurrentValue then
+             UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+        end
     end
 end
 
 local function onRenderStep()
+    local cameraActive = getgenv().DisableCameraShake.CurrentValue
     local character = LocalPlayer.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
 
-    if not rootPart then return end
-    
-    camera.CameraType = Enum.CameraType.Scriptable
-    
-    local focalPoint = rootPart.Position + Vector3.new(0, Config.VerticalOffset, 0)
-    
-    local rotation = CFrame.Angles(0, yaw, 0) * CFrame.Angles(pitch, 0, 0)
-    
-    local position = focalPoint + rotation:VectorToWorldSpace(Vector3.new(0, 0, Config.CameraDistance))
-    
-    camera.CFrame = CFrame.new(position, focalPoint)
-end
+    if not cameraActive and getgenv().lastCameraActive then
+        camera.CameraType = Enum.CameraType.Custom
+        UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+        isCameraMovementActive = false
+    end
 
-local function setupCamera()
-    camera.CameraType = Enum.CameraType.Scriptable
-    UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-end
+    if cameraActive and rootPart then
+        camera.CameraType = Enum.CameraType.Scriptable
+        local focalPoint = rootPart.Position + Vector3.new(0, Config.VerticalOffset, 0)
+        local rotation = CFrame.Angles(0, yaw, 0) * CFrame.Angles(pitch, 0, 0)
+        local position = focalPoint + rotation:VectorToWorldSpace(Vector3.new(0, 0, Config.CameraDistance))
+        camera.CFrame = CFrame.new(position, focalPoint)
+    end
 
-setupCamera()
+    getgenv().lastCameraActive = cameraActive
+end
 
 UserInputService.InputChanged:Connect(onInputChanged)
 UserInputService.InputBegan:Connect(onInputBegan)
 UserInputService.InputEnded:Connect(onInputEnded)
 RunService.RenderStepped:Connect(onRenderStep)
 
-LocalPlayer.CharacterAdded:Connect(function(character)
-    setupCamera()
-end)--]]
+camera.CameraType = Enum.CameraType.Custom
+UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 
 local function getUserIdFromName(username)
     local success, userID = pcall(function()
@@ -1226,6 +1226,19 @@ getgenv().RemoveHitSound = SettingsTab:CreateToggle({
                 getgenv().MuteSound:Disconnect()
                 getgenv().MuteSound = nil
             end
+        end
+    end
+})
+
+getgenv().DisableCameraShake = SettingsTab:CreateToggle({
+    Name = "Disable Camera Shake",
+    CurrentValue = false,
+    Flag = "DisableCameraShake1",
+    Callback = function(value)
+        if value == true then
+            Rayfield:Notify({ Title = "SCRIPT", Content = "DisableCameraShake ENABLED"})
+        else
+            Rayfield:Notify({ Title = "SCRIPT", Content = "DisableCameraShake DISABLED"})
         end
     end
 })

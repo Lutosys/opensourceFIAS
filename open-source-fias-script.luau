@@ -202,7 +202,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     end
 end)
 
-local Config = {
+--[[local Config = {
     Sensitivity = 0.3,
     MinPitch = -80,
     MaxPitch = 80,
@@ -277,7 +277,7 @@ RunService.RenderStepped:Connect(onRenderStep)
 
 LocalPlayer.CharacterAdded:Connect(function(character)
     setupCamera()
-end)
+end)--]]
 
 local function getUserIdFromName(username)
     local success, userID = pcall(function()
